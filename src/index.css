@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pink-brand: #F9C4D2;
+  --pink-light: #FDE8EF;
+  --pink-deep: #F4A5BE;
+  --black-brand: #111111;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+  color: #111111;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #fde8ef;
+}
+::-webkit-scrollbar-thumb {
+  background: #F9C4D2;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F4A5BE;
+}
+
+/* Custom utilities */
+@layer components {
+  .btn-primary {
+    @apply bg-[#111111] text-white px-8 py-3 font-semibold tracking-widest uppercase text-sm hover:bg-[#F9C4D2] hover:text-[#111111] transition-all duration-300 inline-block;
+  }
+  .btn-outline {
+    @apply border-2 border-[#111111] text-[#111111] px-8 py-3 font-semibold tracking-widest uppercase text-sm hover:bg-[#111111] hover:text-white transition-all duration-300 inline-block;
+  }
+  .btn-pink {
+    @apply bg-[#F9C4D2] text-[#111111] px-6 py-2.5 font-semibold tracking-wider uppercase text-xs hover:bg-[#F4A5BE] transition-all duration-300 inline-block;
+  }
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl;
+  }
+  .section-title {
+    @apply font-display text-3xl md:text-4xl text-[#111111] font-bold;
+  }
+  .section-subtitle {
+    @apply text-gray-500 text-sm tracking-widest uppercase font-medium;
+  }
+  .nav-link {
+    @apply text-[#111111] font-medium tracking-wider text-sm uppercase hover:text-[#F4A5BE] transition-colors duration-200 relative;
+  }
+}
+
+/* Hero gradient */
+.hero-gradient {
+  background: linear-gradient(135deg, #FDE8EF 0%, #F9C4D2 40%, #ffffff 100%);
+}
+
+/* Marquee strip */
+.marquee-track {
+  display: flex;
+  width: max-content;
+}
+
+/* Product image zoom */
+.product-img-wrap {
+  overflow: hidden;
+}
+.product-img-wrap img {
+  transition: transform 0.5s ease;
+}
+.product-img-wrap:hover img {
+  transform: scale(1.08);
+}
+
+/* Size badge */
+.size-badge {
+  @apply border border-gray-300 text-xs font-medium px-2.5 py-1 hover:border-[#111111] hover:bg-[#111111] hover:text-white cursor-pointer transition-all duration-200;
+}
+.size-badge.active {
+  @apply border-[#111111] bg-[#111111] text-white;
+}
+
+/* Quantity control */
+.qty-btn {
+  @apply w-8 h-8 border border-gray-300 flex items-center justify-center text-lg font-light hover:bg-gray-100 transition-colors cursor-pointer;
+}
+
+/* Admin panel utilities */
+.admin-input {
+  @apply w-full bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[#F9C4D2] transition-colors placeholder-gray-600;
+}
+.admin-label {
+  @apply block text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2;
+}
+
+/* Fix: Native select dropdown options invisible on dark background */
+.admin-input option {
+  background-color: #ffffff;
+  color: #111111;
+}
+.admin-input option:hover,
+.admin-input option:checked {
+  background-color: #F9C4D2;
+  color: #111111;
+}
