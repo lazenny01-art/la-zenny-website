@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
   Plus, Trash2, LogOut, Tag, Package, Upload, X,
   ChevronDown, Image as ImageIcon, Loader, CheckCircle,
-  LayoutDashboard, AlertCircle
+  LayoutDashboard, AlertCircle, Pencil
 } from "lucide-react";
 import { logoutAdmin } from "../../firebase/auth";
 import {
-  getCategories, addCategory, deleteCategory,
-  getProducts, addProduct, deleteProduct,
+  getCategories, addCategory, updateCategory, deleteCategory,
+  getProducts, addProduct, updateProduct, deleteProduct,
 } from "../../firebase/firestore";
 import { uploadToCloudinary } from "../../utils/cloudinary";
 
@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [catImagePreview, setCatImagePreview] = useState('');
   const [catLoading, setCatLoading] = useState(false);
   const [showCatForm, setShowCatForm] = useState(false);
+  const [editingCat, setEditingCat] = useState(null);
   const catFileInputRef = useRef();
 
   // Products
@@ -44,6 +45,7 @@ export default function AdminDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [editingProduct, setEditingProduct] = useState(null);
   const fileInputRef = useRef();
 
   // Load data
@@ -71,27 +73,48 @@ export default function AdminDashboard() {
   };
 
   // ── Category actions ──
+  const resetCatForm = () => {
+    setCatForm({ name: '', description: '' });
+    setCatImageFile(null);
+    setCatImagePreview('');
+    setShowCatForm(false);
+    setEditingCat(null);
+  };
+
+  const handleEditCategory = (cat) => {
+    setEditingCat(cat);
+    setCatForm({ name: cat.name || '', description: cat.description || '' });
+    setCatImagePreview(cat.image || '');
+    setCatImageFile(null);
+    setShowCatForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleAddCategory = async (e) => {
     e.preventDefault();
     if (!catForm.name.trim()) return;
     setCatLoading(true);
     try {
-      let imageUrl = '';
+      let imageUrl = catImagePreview;
       if (catImageFile) {
         imageUrl = await uploadToCloudinary(catImageFile, () => {});
       }
-      await addCategory({
+      const data = {
         name: catForm.name.trim(),
         description: catForm.description.trim(),
         image: imageUrl,
-      });
-      setCatForm({ name: '', description: '' });
-      setCatImageFile(null);
-      setCatImagePreview('');
-      setShowCatForm(false);
+      };
+      if (editingCat) {
+        await updateCategory(editingCat.id, data);
+        setSuccessMsg(`Category "${data.name}" updated!`);
+      } else {
+        await addCategory(data);
+      }
+      resetCatForm();
       await loadCategories();
+      setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
-      console.error('Category add error:', err);
+      console.error('Category error:', err);
     } finally {
       setCatLoading(false);
     }
@@ -120,6 +143,24 @@ export default function AdminDashboard() {
     }));
   };
 
+  const handleEditProduct = (prod) => {
+    setEditingProduct(prod);
+    setForm({
+      name: prod.name || '',
+      price: prod.price || '',
+      description: prod.description || '',
+      category: prod.category || '',
+      sizes: prod.sizes || [],
+      colors: (prod.colors || []).join(', '),
+      badge: prod.badge || '',
+      featured: prod.featured || false,
+    });
+    setImagePreview(prod.image || '');
+    setImageFile(null);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
@@ -131,15 +172,13 @@ export default function AdminDashboard() {
       setErrorMsg("Please select at least one size.");
       return;
     }
-
     setSubmitting(true);
     try {
       let imageUrl = imagePreview;
       if (imageFile) {
         imageUrl = await uploadToCloudinary(imageFile, setUploadProgress);
       }
-
-      await addProduct({
+      const productData = {
         name: form.name.trim(),
         price: Number(form.price),
         description: form.description.trim(),
@@ -150,9 +189,15 @@ export default function AdminDashboard() {
         featured: form.featured,
         image: imageUrl,
         images: [imageUrl],
-      });
-
-      setSuccessMsg(`"${form.name}" added successfully!`);
+      };
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+        setSuccessMsg(`"${form.name}" updated successfully!`);
+        setEditingProduct(null);
+      } else {
+        await addProduct(productData);
+        setSuccessMsg(`"${form.name}" added successfully!`);
+      }
       setForm(emptyForm);
       setImageFile(null);
       setImagePreview("");
@@ -161,8 +206,8 @@ export default function AdminDashboard() {
       await loadProducts();
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
-      console.error("Product upload error:", err);
-      setErrorMsg("Upload failed: " + err.message);
+      console.error("Product error:", err);
+      setErrorMsg("Failed: " + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -181,6 +226,7 @@ export default function AdminDashboard() {
     setUploadProgress(0);
     setErrorMsg("");
     setShowForm(false);
+    setEditingProduct(null);
   };
 
   return (
@@ -268,8 +314,8 @@ export default function AdminDashboard() {
             {showCatForm && (
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-bold text-white text-lg">Add New Category</h2>
-                  <button onClick={() => { setShowCatForm(false); setCatForm({ name: '', description: '' }); setCatImageFile(null); setCatImagePreview(''); }} className="text-gray-400 hover:text-white transition-colors">
+                  <h2 className="font-bold text-white text-lg">{editingCat ? 'Edit Category' : 'Add New Category'}</h2>
+                  <button onClick={resetCatForm} className="text-gray-400 hover:text-white transition-colors">
                     <X size={20} />
                   </button>
                 </div>
@@ -358,7 +404,7 @@ export default function AdminDashboard() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setShowCatForm(false); setCatForm({ name: '', description: '' }); setCatImageFile(null); setCatImagePreview(''); }}
+                      onClick={resetCatForm}
                       className="px-6 py-3.5 border border-white/20 text-gray-400 rounded-xl hover:border-white/40 hover:text-white transition-colors text-sm font-semibold"
                     >
                       Cancel
@@ -402,13 +448,22 @@ export default function AdminDashboard() {
                             <h3 className="text-white font-semibold">{cat.name}</h3>
                             {cat.description && <p className="text-gray-400 text-xs mt-1 leading-relaxed">{cat.description}</p>}
                           </div>
-                          <button
-                            onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                            className="text-gray-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-400/10 rounded-lg shrink-0"
-                            aria-label="Delete category"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleEditCategory(cat)}
+                              className="text-gray-500 hover:text-[#F9C4D2] transition-colors p-1.5 hover:bg-[#F9C4D2]/10 rounded-lg shrink-0"
+                              aria-label="Edit category"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                              className="text-gray-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-400/10 rounded-lg shrink-0"
+                              aria-label="Delete category"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -437,7 +492,7 @@ export default function AdminDashboard() {
             {showForm && (
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-bold text-white text-lg">Add New Product</h2>
+                  <h2 className="font-bold text-white text-lg">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
                   <button onClick={resetForm} className="text-gray-400 hover:text-white transition-colors">
                     <X size={20} />
                   </button>
@@ -720,17 +775,26 @@ export default function AdminDashboard() {
                         <p className="text-white font-bold mt-1">₹{Number(prod.price).toLocaleString("en-IN")}</p>
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex gap-1">
-                            {(prod.sizes || []).map(s => (
+                             {(prod.sizes || []).map(s => (
                               <span key={s} className="text-[10px] text-gray-400 border border-white/10 px-1.5 py-0.5 rounded">{s}</span>
                             ))}
                           </div>
-                          <button
-                            onClick={() => handleDeleteProduct(prod.id, prod.name)}
-                            className="text-gray-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-400/10 rounded-lg"
-                            aria-label={`Delete ${prod.name}`}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleEditProduct(prod)}
+                              className="text-gray-500 hover:text-[#F9C4D2] transition-colors p-1.5 hover:bg-[#F9C4D2]/10 rounded-lg"
+                              aria-label={`Edit ${prod.name}`}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                              className="text-gray-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-400/10 rounded-lg"
+                              aria-label={`Delete ${prod.name}`}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -27,6 +27,10 @@ export const addCategory = async (data) => {
   });
 };
 
+export const updateCategory = async (id, data) => {
+  await updateDoc(doc(db, "categories", id), data);
+};
+
 export const deleteCategory = async (id) => {
   await deleteDoc(doc(db, "categories", id));
 };
