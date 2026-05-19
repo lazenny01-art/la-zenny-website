@@ -26,7 +26,7 @@ export default function Footer() {
           {/* Social */}
           <div className="flex items-center gap-3 mt-6">
             <a
-              href="https://wa.me/919999999999"
+              href="https://wa.me/919909262100"
               id="footer-whatsapp"
               target="_blank"
               rel="noopener noreferrer"
@@ -36,7 +36,7 @@ export default function Footer() {
               WhatsApp Us
             </a>
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/lazenny.com1"
               id="footer-instagram"
               target="_blank"
               rel="noopener noreferrer"
@@ -94,15 +94,15 @@ export default function Footer() {
           <div className="space-y-2 text-gray-400 text-xs">
             <div className="flex items-center gap-2">
               <Mail size={12} />
-              <span>lazenny@fashion.in</span>
+              <span>lazenny01@gmail.com</span>
             </div>
             <div className="flex items-center gap-2">
               <Phone size={12} />
-              <span>+91 99999 99999</span>
+              <span>+91 99092 62100</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin size={12} />
-              <span>India 🇮🇳</span>
+              <span>Varachha, Surat - 395006 🇮🇳</span>
             </div>
           </div>
         </div>

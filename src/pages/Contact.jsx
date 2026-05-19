@@ -31,9 +31,9 @@ export default function Contact() {
               <h2 className="font-bold text-2xl text-[#111111] mb-6">Contact Details</h2>
               <div className="space-y-5">
                 {[
-                  { icon: Phone, label: 'Call / WhatsApp', value: '+91 99999 99999' },
-                  { icon: Mail, label: 'Email', value: 'lazenny@fashion.in' },
-                  { icon: MapPin, label: 'Location', value: 'India 🇮🇳' },
+                  { icon: Phone, label: 'Call / WhatsApp', value: '+91 99092 62100' },
+                  { icon: Mail, label: 'Email', value: 'lazenny01@gmail.com' },
+                  { icon: MapPin, label: 'Location', value: '1st floor, B-4 Subhas Nagar, Near Avadh Viceroy, Opp Sarthana Natur Park, Varachha, Surat - 395006' },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="flex items-start gap-4">
                     <div className="w-11 h-11 bg-[#FDE8EF] rounded-full flex items-center justify-center shrink-0">
@@ -53,7 +53,7 @@ export default function Contact() {
               <h3 className="font-bold text-lg mb-2">Chat on WhatsApp</h3>
               <p className="text-gray-400 text-sm mb-4">Get instant help for orders, sizing, returns & more. We reply within minutes!</p>
               <a
-                href="https://wa.me/919999999999?text=Hi%20LA%20ZENNY!%20I%20have%20a%20question."
+                href="https://wa.me/919909262100?text=Hi%20LA%20ZENNY!%20I%20have%20a%20question."
                 id="contact-whatsapp"
                 target="_blank"
                 rel="noopener noreferrer"
