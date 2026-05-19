@@ -10,15 +10,27 @@ const testimonials = [
   { name: 'Sneha M.', city: 'Delhi', text: 'Affordable and so stylish. LA Zenny is now my go-to for everything!', stars: 5 },
 ];
 
+const heroPlaceholders = [
+  'https://picsum.photos/seed/hero1/500/700',
+  'https://picsum.photos/seed/hero3/500/600',
+  'https://picsum.photos/seed/hero4/500/600',
+  'https://picsum.photos/seed/hero2/500/700',
+];
+
 export default function Home({ onAddToCart }) {
-  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [newProducts, setNewProducts] = useState([]);
+  const [trendingProducts, setTrendingProducts] = useState([]);
+  const [bestsellerProducts, setBestsellerProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
-      setFeaturedProducts(prods.filter(p => p.featured).slice(0, 8));
+      // Products are already ordered by createdAt desc from firestore
+      setNewProducts(prods.filter(p => p.badge === 'New').slice(0, 4));
+      setTrendingProducts(prods.filter(p => p.badge === 'Trending').slice(0, 4));
+      setBestsellerProducts(prods.filter(p => p.badge === 'Bestseller').slice(0, 4));
       setCategories(cats);
       setLoading(false);
     };
@@ -35,6 +47,10 @@ export default function Home({ onAddToCart }) {
     'https://picsum.photos/seed/cat-g/400/500',
     'https://picsum.photos/seed/cat-h/400/500',
   ];
+
+  // Get hero image: trending product image or fallback placeholder
+  const getHeroImg = (index) =>
+    trendingProducts[index]?.image || heroPlaceholders[index];
 
   return (
     <div className="animate-fade-in">
@@ -68,28 +84,26 @@ export default function Home({ onAddToCart }) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-3">
                 <div className="rounded-2xl overflow-hidden shadow-2xl h-64 animate-float">
-                  <img src="https://picsum.photos/seed/hero1/500/700" alt="Fashion" className="w-full h-full object-cover" />
+                  <img src={getHeroImg(0)} alt="Trending Fashion" className="w-full h-full object-cover" />
                 </div>
                 <div className="rounded-2xl overflow-hidden shadow-xl h-44">
-                  <img src="https://picsum.photos/seed/hero3/500/600" alt="Fashion" className="w-full h-full object-cover" />
+                  <img src={getHeroImg(1)} alt="Trending Fashion" className="w-full h-full object-cover" />
                 </div>
               </div>
               <div className="space-y-3 mt-8">
                 <div className="rounded-2xl overflow-hidden shadow-xl h-44">
-                  <img src="https://picsum.photos/seed/hero4/500/600" alt="Fashion" className="w-full h-full object-cover" />
+                  <img src={getHeroImg(2)} alt="Trending Fashion" className="w-full h-full object-cover" />
                 </div>
                 <div className="rounded-2xl overflow-hidden shadow-2xl h-64 animate-float" style={{ animationDelay: '1.5s' }}>
-                  <img src="https://picsum.photos/seed/hero2/500/700" alt="Fashion" className="w-full h-full object-cover" />
+                  <img src={getHeroImg(3)} alt="Trending Fashion" className="w-full h-full object-cover" />
                 </div>
               </div>
             </div>
             <div className="absolute -top-4 -left-4 bg-white rounded-2xl shadow-xl p-4 border border-pink-100">
               <p className="text-xs text-gray-500 tracking-wider">Trending Now</p>
-              <p className="font-bold text-[#111111] text-sm">Co-ord Sets 🌟</p>
-            </div>
-            <div className="absolute -bottom-4 -right-4 bg-[#F9C4D2] rounded-2xl shadow-xl p-4">
-              <p className="text-xs font-medium text-[#111111]">Free Delivery</p>
-              <p className="font-bold text-[#111111] text-sm">Above ₹999 🚚</p>
+              <p className="font-bold text-[#111111] text-sm">
+                {trendingProducts[0]?.name || 'Co-ord Sets'} 🌟
+              </p>
             </div>
           </div>
         </div>
@@ -162,37 +176,61 @@ export default function Home({ onAddToCart }) {
         </div>
       </section>
 
-      {/* NEW ARRIVALS */}
-      <section className="max-w-7xl mx-auto px-6 py-6 pb-16">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
-          <div>
-            <p className="section-subtitle text-[#F4A5BE] mb-2">Just Dropped</p>
-            <h2 className="section-title">New Arrivals</h2>
+      {/* NEW ARRIVALS — badge = "New", last 4 */}
+      {!loading && (
+        <section className="max-w-7xl mx-auto px-6 py-6 pb-16">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
+            <div>
+              <p className="section-subtitle text-[#F4A5BE] mb-2">Just Dropped</p>
+              <h2 className="section-title">New Arrivals</h2>
+            </div>
+            <Link to="/shop?badge=New" className="flex items-center gap-2 text-sm font-semibold text-[#111111] hover:text-[#F4A5BE] transition-colors">
+              View All <ArrowRight size={16} />
+            </Link>
           </div>
-          <Link to="/shop" className="flex items-center gap-2 text-sm font-semibold text-[#111111] hover:text-[#F4A5BE] transition-colors">
-            View All <ArrowRight size={16} />
-          </Link>
-        </div>
+          {newProducts.length === 0 ? (
+            <div className="text-center py-20 bg-[#FDE8EF] rounded-3xl">
+              <p className="text-5xl mb-4">🌸</p>
+              <h3 className="font-display text-2xl font-bold text-[#111111] mb-2">New Arrivals Coming Soon</h3>
+              <p className="text-gray-500">Add products with "New" badge from the admin to show them here!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {newProducts.map((product) => (
+                <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-gray-400">
-            <Loader size={28} className="animate-spin mr-3" />
-            <span>Loading products...</span>
+      {/* BESTSELLERS — badge = "Bestseller", last 4 */}
+      {!loading && bestsellerProducts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-6 py-6 pb-16">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
+            <div>
+              <p className="section-subtitle text-[#F4A5BE] mb-2">Customer Favourites</p>
+              <h2 className="section-title">Bestsellers ⭐</h2>
+            </div>
+            <Link to="/shop?badge=Bestseller" className="flex items-center gap-2 text-sm font-semibold text-[#111111] hover:text-[#F4A5BE] transition-colors">
+              View All <ArrowRight size={16} />
+            </Link>
           </div>
-        ) : featuredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-[#FDE8EF] rounded-3xl">
-            <p className="text-5xl mb-4">🌸</p>
-            <h3 className="font-display text-2xl font-bold text-[#111111] mb-2">Collection Coming Soon</h3>
-            <p className="text-gray-500">We're curating something beautiful for you. Check back soon!</p>
-          </div>
-        ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {featuredProducts.map((product) => (
+            {bestsellerProducts.map((product) => (
               <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
+
+      {/* Loading state */}
+      {loading && (
+        <div className="flex items-center justify-center py-20 text-gray-400">
+          <Loader size={28} className="animate-spin mr-3" />
+          <span>Loading...</span>
+        </div>
+      )}
 
       {/* TESTIMONIALS */}
       <section className="bg-[#FDE8EF] py-16">
