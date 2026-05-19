@@ -19,7 +19,7 @@ export default function Home({ onAddToCart }) {
     const load = async () => {
       const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
       setFeaturedProducts(prods.filter(p => p.featured).slice(0, 8));
-      setCategories(cats.slice(0, 4));
+      setCategories(cats);
       setLoading(false);
     };
     load();
@@ -30,6 +30,10 @@ export default function Home({ onAddToCart }) {
     'https://picsum.photos/seed/cat-b/400/500',
     'https://picsum.photos/seed/cat-c/400/500',
     'https://picsum.photos/seed/cat-d/400/500',
+    'https://picsum.photos/seed/cat-e/400/500',
+    'https://picsum.photos/seed/cat-f/400/500',
+    'https://picsum.photos/seed/cat-g/400/500',
+    'https://picsum.photos/seed/cat-h/400/500',
   ];
 
   return (
@@ -116,7 +120,11 @@ export default function Home({ onAddToCart }) {
             <p className="section-subtitle text-[#F4A5BE] mb-2">Shop by Style</p>
             <h2 className="section-title">Featured Categories</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className={`grid gap-4 ${
+            categories.length <= 2 ? 'grid-cols-2' :
+            categories.length === 3 ? 'grid-cols-2 md:grid-cols-3' :
+            'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+          }`}>
             {categories.map((cat, i) => (
               <Link
                 key={cat.id}
