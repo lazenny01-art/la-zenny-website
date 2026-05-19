@@ -26,8 +26,12 @@ export default function AdminDashboard() {
 
   // Categories
   const [categories, setCategories] = useState([]);
-  const [newCat, setNewCat] = useState("");
+  const [catForm, setCatForm] = useState({ name: '', description: '' });
+  const [catImageFile, setCatImageFile] = useState(null);
+  const [catImagePreview, setCatImagePreview] = useState('');
   const [catLoading, setCatLoading] = useState(false);
+  const [showCatForm, setShowCatForm] = useState(false);
+  const catFileInputRef = useRef();
 
   // Products
   const [products, setProducts] = useState([]);
@@ -69,12 +73,28 @@ export default function AdminDashboard() {
   // ── Category actions ──
   const handleAddCategory = async (e) => {
     e.preventDefault();
-    if (!newCat.trim()) return;
+    if (!catForm.name.trim()) return;
     setCatLoading(true);
-    await addCategory(newCat.trim());
-    setNewCat("");
-    await loadCategories();
-    setCatLoading(false);
+    try {
+      let imageUrl = '';
+      if (catImageFile) {
+        imageUrl = await uploadToCloudinary(catImageFile, () => {});
+      }
+      await addCategory({
+        name: catForm.name.trim(),
+        description: catForm.description.trim(),
+        image: imageUrl,
+      });
+      setCatForm({ name: '', description: '' });
+      setCatImageFile(null);
+      setCatImagePreview('');
+      setShowCatForm(false);
+      await loadCategories();
+    } catch (err) {
+      console.error('Category add error:', err);
+    } finally {
+      setCatLoading(false);
+    }
   };
 
   const handleDeleteCategory = async (id, name) => {
@@ -232,29 +252,123 @@ export default function AdminDashboard() {
         {/* ── CATEGORIES TAB ── */}
         {tab === "categories" && (
           <div className="space-y-6">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <h2 className="font-bold text-white text-base mb-5">Add New Category</h2>
-              <form onSubmit={handleAddCategory} className="flex gap-3">
-                <input
-                  id="category-name-input"
-                  type="text"
-                  required
-                  value={newCat}
-                  onChange={e => setNewCat(e.target.value)}
-                  placeholder="e.g. Summer Collection"
-                  className="flex-1 bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[#F9C4D2] placeholder-gray-600"
-                />
-                <button
-                  id="add-category-btn"
-                  type="submit"
-                  disabled={catLoading}
-                  className="flex items-center gap-2 bg-[#F9C4D2] text-[#111111] px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#F4A5BE] transition-colors disabled:opacity-60"
-                >
-                  <Plus size={16} /> {catLoading ? "Adding..." : "Add"}
-                </button>
-              </form>
-            </div>
 
+            {/* Add Category Button */}
+            {!showCatForm && (
+              <button
+                id="show-add-category-form"
+                onClick={() => setShowCatForm(true)}
+                className="flex items-center gap-2 bg-[#F9C4D2] text-[#111111] px-6 py-3 rounded-xl font-bold text-sm hover:bg-[#F4A5BE] transition-colors"
+              >
+                <Plus size={16} /> Add New Category
+              </button>
+            )}
+
+            {/* Add Category Form */}
+            {showCatForm && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-bold text-white text-lg">Add New Category</h2>
+                  <button onClick={() => { setShowCatForm(false); setCatForm({ name: '', description: '' }); setCatImageFile(null); setCatImagePreview(''); }} className="text-gray-400 hover:text-white transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddCategory} className="space-y-5">
+                  {/* Name */}
+                  <div>
+                    <label className="admin-label">Category Name *</label>
+                    <input
+                      id="category-name-input"
+                      type="text"
+                      required
+                      value={catForm.name}
+                      onChange={e => setCatForm(f => ({ ...f, name: e.target.value }))}
+                      className="admin-input"
+                      placeholder="e.g. Co-ords, Tops, Dresses"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="admin-label">Description</label>
+                    <textarea
+                      id="category-description"
+                      rows={2}
+                      value={catForm.description}
+                      onChange={e => setCatForm(f => ({ ...f, description: e.target.value }))}
+                      className="admin-input resize-none"
+                      placeholder="Short description of this category..."
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <label className="admin-label">Category Image</label>
+                    <div
+                      onClick={() => catFileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                        catImagePreview ? 'border-[#F9C4D2]/50 bg-[#F9C4D2]/5' : 'border-white/20 hover:border-[#F9C4D2]/50'
+                      }`}
+                    >
+                      {catImagePreview ? (
+                        <div className="relative">
+                          <img src={catImagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg mx-auto" />
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); setCatImageFile(null); setCatImagePreview(''); }}
+                            className="absolute -top-2 -right-2 mx-auto w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white"
+                            style={{ left: 'calc(50% + 48px)' }}
+                          >
+                            <X size={12} />
+                          </button>
+                          <p className="text-gray-400 text-xs mt-3">Click to change image</p>
+                        </div>
+                      ) : (
+                        <>
+                          <ImageIcon size={32} className="mx-auto text-gray-500 mb-3" />
+                          <p className="text-gray-400 text-sm">Click to upload category image</p>
+                          <p className="text-gray-600 text-xs mt-1">JPG, PNG — shows on homepage</p>
+                        </>
+                      )}
+                    </div>
+                    <input
+                      ref={catFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        setCatImageFile(file);
+                        setCatImagePreview(URL.createObjectURL(file));
+                      }}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      id="add-category-btn"
+                      type="submit"
+                      disabled={catLoading}
+                      className="flex-1 flex items-center justify-center gap-2 bg-[#F9C4D2] text-[#111111] py-3.5 rounded-xl text-sm font-bold hover:bg-[#F4A5BE] transition-colors disabled:opacity-60"
+                    >
+                      {catLoading ? <><Loader size={16} className="animate-spin" /> Saving...</> : <><Upload size={16} /> Add Category</>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowCatForm(false); setCatForm({ name: '', description: '' }); setCatImageFile(null); setCatImagePreview(''); }}
+                      className="px-6 py-3.5 border border-white/20 text-gray-400 rounded-xl hover:border-white/40 hover:text-white transition-colors text-sm font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Categories List */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h2 className="font-bold text-white text-base mb-5">
                 All Categories ({categories.length})
@@ -265,23 +379,38 @@ export default function AdminDashboard() {
                   <p>No categories yet. Add your first one above!</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categories.map(cat => (
                     <div
                       key={cat.id}
-                      className="flex items-center justify-between px-4 py-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors"
+                      className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-colors group"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#F9C4D2]" />
-                        <span className="text-white font-medium">{cat.name}</span>
+                      {/* Image */}
+                      <div className="aspect-[4/3] bg-white/5 relative overflow-hidden">
+                        {cat.image ? (
+                          <img src={cat.image} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-600">
+                            <ImageIcon size={32} />
+                          </div>
+                        )}
                       </div>
-                      <button
-                        onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                        className="text-gray-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-400/10 rounded-lg"
-                        aria-label="Delete category"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {/* Info */}
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="text-white font-semibold">{cat.name}</h3>
+                            {cat.description && <p className="text-gray-400 text-xs mt-1 leading-relaxed">{cat.description}</p>}
+                          </div>
+                          <button
+                            onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                            className="text-gray-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-400/10 rounded-lg shrink-0"
+                            aria-label="Delete category"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

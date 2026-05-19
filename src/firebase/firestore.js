@@ -20,9 +20,9 @@ export const getCategories = async () => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
-export const addCategory = async (name) => {
+export const addCategory = async (data) => {
   return await addDoc(collection(db, "categories"), {
-    name,
+    ...data,
     createdAt: serverTimestamp(),
   });
 };
