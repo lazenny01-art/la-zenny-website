@@ -102,7 +102,7 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-2">
               <MapPin size={12} />
-              <span>Varachha, Surat - 395006 🇮🇳</span>
+              <span>1st floor, B-4 Subhas Nagar, Near Avadh Viceroy, Opp Sarthana Natur Park, Varachha, Surat - 395006 🇮🇳</span>
             </div>
           </div>
         </div>
