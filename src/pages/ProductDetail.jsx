@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Zap, Star, Truck, RotateCcw, Shield, ChevronDown, Loader } from 'lucide-react';
+import { ShoppingBag, Zap, Star, Truck, RotateCcw, Shield, ChevronDown, Loader, PlayCircle } from 'lucide-react';
 import { getProductById, getProducts } from '../firebase/firestore';
 
 export default function ProductDetail({ onAddToCart }) {
@@ -54,6 +54,15 @@ export default function ProductDetail({ onAddToCart }) {
   const images = product.images?.length ? product.images : [product.image];
   const colors = product.colors || [];
 
+  // Extract YouTube video ID from various URL formats
+  const getYouTubeId = (url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
+  const youtubeId = getYouTubeId(product.youtubeUrl);
+
   const handleAddToCart = () => {
     if (!selectedSize) { setSizeError(true); setTimeout(() => setSizeError(false), 2000); return; }
     for (let i = 0; i < qty; i++) {
@@ -97,6 +106,25 @@ export default function ProductDetail({ onAddToCart }) {
                     <img src={img} alt={`View ${i + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* YouTube Video Embed */}
+            {youtubeId && (
+              <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+                  <PlayCircle size={16} className="text-[#F4A5BE]" />
+                  <span className="text-xs font-semibold text-gray-600 tracking-wide uppercase">Product Video</span>
+                </div>
+                <div className="aspect-video">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
+                    title="Product Video"
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -160,7 +188,13 @@ export default function ProductDetail({ onAddToCart }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {[{s:'XS',c:'32',w:'26',h:'35'},{s:'S',c:'34',w:'28',h:'37'},{s:'M',c:'36',w:'30',h:'39'},{s:'L',c:'38',w:'32',h:'41'},{s:'XL',c:'40',w:'34',h:'43'}].map(row => (
+                      {[
+                        {s:'XS',c:'32',w:'26',h:'35'},{s:'S',c:'34',w:'28',h:'37'},
+                        {s:'M',c:'36',w:'30',h:'39'},{s:'L',c:'38',w:'32',h:'41'},
+                        {s:'XL',c:'40',w:'34',h:'43'},{s:'2XL',c:'42',w:'36',h:'45'},
+                        {s:'3XL',c:'44',w:'38',h:'47'},{s:'4XL',c:'46',w:'40',h:'49'},
+                        {s:'5XL',c:'48',w:'42',h:'51'},{s:'6XL',c:'50',w:'44',h:'53'},
+                      ].map(row => (
                         <tr key={row.s} className={selectedSize === row.s ? 'bg-[#FDE8EF]' : 'hover:bg-gray-50'}>
                           <td className="py-2 px-3 text-left font-semibold">{row.s}</td>
                           <td className="py-2 px-3">{row.c}"</td>

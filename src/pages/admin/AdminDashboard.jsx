@@ -12,12 +12,12 @@ import {
 } from "../../firebase/firestore";
 import { uploadToCloudinary } from "../../utils/cloudinary";
 
-const ALL_SIZES = ["XS", "S", "M", "L", "XL"];
+const ALL_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
 const BADGES = ["", "New", "Bestseller", "Trending"];
 
 const emptyForm = {
   name: "", price: "", description: "", category: "",
-  sizes: [], colors: "", badge: "", featured: false,
+  sizes: [], colors: "", badge: "", featured: false, youtubeUrl: "",
 };
 
 export default function AdminDashboard() {
@@ -39,8 +39,7 @@ export default function AdminDashboard() {
   const [prodLoading, setProdLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [imageItems, setImageItems] = useState([]); // [{preview, file}]
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -127,11 +126,20 @@ export default function AdminDashboard() {
   };
 
   // ── Product form ──
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+  const handleAddImages = (e) => {
+    const files = Array.from(e.target.files);
+    const remaining = 6 - imageItems.length;
+    if (remaining <= 0) return;
+    const newItems = files.slice(0, remaining).map(f => ({
+      preview: URL.createObjectURL(f),
+      file: f,
+    }));
+    setImageItems(prev => [...prev, ...newItems]);
+    e.target.value = '';
+  };
+
+  const removeImage = (index) => {
+    setImageItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const toggleSize = (size) => {
@@ -154,9 +162,10 @@ export default function AdminDashboard() {
       colors: (prod.colors || []).join(', '),
       badge: prod.badge || '',
       featured: prod.featured || false,
+      youtubeUrl: prod.youtubeUrl || '',
     });
-    setImagePreview(prod.image || '');
-    setImageFile(null);
+    const existingImages = prod.images?.length ? prod.images : (prod.image ? [prod.image] : []);
+    setImageItems(existingImages.map(url => ({ preview: url, file: null })));
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -164,8 +173,8 @@ export default function AdminDashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
-    if (!imageFile && !imagePreview) {
-      setErrorMsg("Please upload a product image.");
+    if (imageItems.length === 0) {
+      setErrorMsg("Please upload at least one product image.");
       return;
     }
     if (form.sizes.length === 0) {
@@ -174,9 +183,15 @@ export default function AdminDashboard() {
     }
     setSubmitting(true);
     try {
-      let imageUrl = imagePreview;
-      if (imageFile) {
-        imageUrl = await uploadToCloudinary(imageFile, setUploadProgress);
+      const finalImages = [];
+      for (let i = 0; i < imageItems.length; i++) {
+        const item = imageItems[i];
+        if (item.file) {
+          const url = await uploadToCloudinary(item.file, i === 0 ? setUploadProgress : () => {});
+          finalImages.push(url);
+        } else {
+          finalImages.push(item.preview);
+        }
       }
       const productData = {
         name: form.name.trim(),
@@ -187,8 +202,9 @@ export default function AdminDashboard() {
         colors: form.colors.split(",").map(c => c.trim()).filter(Boolean),
         badge: form.badge || null,
         featured: form.featured,
-        image: imageUrl,
-        images: [imageUrl],
+        image: finalImages[0],
+        images: finalImages,
+        youtubeUrl: form.youtubeUrl.trim() || '',
       };
       if (editingProduct) {
         await updateProduct(editingProduct.id, productData);
@@ -199,8 +215,7 @@ export default function AdminDashboard() {
         setSuccessMsg(`"${form.name}" added successfully!`);
       }
       setForm(emptyForm);
-      setImageFile(null);
-      setImagePreview("");
+      setImageItems([]);
       setUploadProgress(0);
       setShowForm(false);
       await loadProducts();
@@ -221,8 +236,7 @@ export default function AdminDashboard() {
 
   const resetForm = () => {
     setForm(emptyForm);
-    setImageFile(null);
-    setImagePreview("");
+    setImageItems([]);
     setUploadProgress(0);
     setErrorMsg("");
     setShowForm(false);
@@ -633,47 +647,50 @@ export default function AdminDashboard() {
                     <span className="text-sm text-gray-300">Show in "New Arrivals" on homepage</span>
                   </label>
 
-                  {/* Image Upload */}
+                  {/* Images Upload - Multiple (up to 6) */}
                   <div>
-                    <label className="admin-label">Product Image *</label>
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        imagePreview
-                          ? "border-[#F9C4D2]/50 bg-[#F9C4D2]/5"
-                          : "border-white/20 hover:border-[#F9C4D2]/50"
-                      }`}
-                    >
-                      {imagePreview ? (
-                        <div className="relative">
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="w-32 h-40 object-cover rounded-lg mx-auto"
-                          />
-                          <button
-                            type="button"
-                            onClick={e => { e.stopPropagation(); setImageFile(null); setImagePreview(""); }}
-                            className="absolute -top-2 -right-2 mx-auto w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white"
-                            style={{ left: "calc(50% + 48px)" }}
-                          >
-                            <X size={12} />
-                          </button>
-                          <p className="text-gray-400 text-xs mt-3">Click to change image</p>
-                        </div>
-                      ) : (
-                        <>
-                          <ImageIcon size={32} className="mx-auto text-gray-500 mb-3" />
-                          <p className="text-gray-400 text-sm">Click to upload product image</p>
-                          <p className="text-gray-600 text-xs mt-1">JPG, PNG, WEBP — Max 10MB</p>
-                        </>
-                      )}
-                    </div>
+                    <label className="admin-label">
+                      Product Images * <span className="text-gray-500 font-normal text-xs">({imageItems.length}/6) — first image is the main photo</span>
+                    </label>
+
+                    {/* Preview Grid */}
+                    {imageItems.length > 0 && (
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
+                        {imageItems.map((item, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border-2 border-[#F9C4D2]/40">
+                            <img src={item.preview} alt={`Image ${idx + 1}`} className="w-full h-full object-cover" />
+                            {idx === 0 && (
+                              <span className="absolute top-1 left-1 bg-[#F9C4D2] text-[#111111] text-[8px] font-bold px-1 py-0.5 rounded uppercase leading-none">Main</span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeImage(idx)}
+                              className="absolute top-1 right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload area */}
+                    {imageItems.length < 6 && (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border-2 border-dashed border-white/20 hover:border-[#F9C4D2]/50 rounded-xl p-5 text-center cursor-pointer transition-colors"
+                      >
+                        <ImageIcon size={28} className="mx-auto text-gray-500 mb-2" />
+                        <p className="text-gray-400 text-sm">Click to add images ({6 - imageItems.length} slots remaining)</p>
+                        <p className="text-gray-600 text-xs mt-1">JPG, PNG — you can select multiple at once</p>
+                      </div>
+                    )}
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
-                      onChange={handleImageChange}
+                      multiple
+                      onChange={handleAddImages}
                       className="hidden"
                     />
 
@@ -681,7 +698,7 @@ export default function AdminDashboard() {
                     {submitting && uploadProgress > 0 && uploadProgress < 100 && (
                       <div className="mt-3">
                         <div className="flex justify-between text-xs text-gray-400 mb-1">
-                          <span>Uploading image...</span>
+                          <span>Uploading images...</span>
                           <span>{uploadProgress}%</span>
                         </div>
                         <div className="w-full bg-white/10 rounded-full h-1.5">
@@ -692,6 +709,20 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* YouTube Video Link */}
+                  <div>
+                    <label className="admin-label">YouTube Video Link <span className="text-gray-500 font-normal">(Optional)</span></label>
+                    <input
+                      id="product-youtube"
+                      type="text"
+                      value={form.youtubeUrl}
+                      onChange={e => setForm(f => ({ ...f, youtubeUrl: e.target.value }))}
+                      className="admin-input"
+                      placeholder="https://youtu.be/VIDEO_ID or https://youtube.com/watch?v=..."
+                    />
+                    <p className="text-gray-600 text-xs mt-1.5">💡 Set video as "Unlisted" on YouTube so it only shows on your website</p>
                   </div>
 
                   {/* Error */}
@@ -711,6 +742,8 @@ export default function AdminDashboard() {
                     >
                       {submitting ? (
                         <><Loader size={16} className="animate-spin" /> Saving...</>
+                      ) : editingProduct ? (
+                        <><Upload size={16} /> Update Product</>
                       ) : (
                         <><Upload size={16} /> Add Product</>
                       )}
