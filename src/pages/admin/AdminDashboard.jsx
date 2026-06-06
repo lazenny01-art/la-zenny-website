@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   const [catImageFile, setCatImageFile] = useState(null);
   const [catImagePreview, setCatImagePreview] = useState('');
   const [catLoading, setCatLoading] = useState(false);
+  const [catErrorMsg, setCatErrorMsg] = useState('');
   const [showCatForm, setShowCatForm] = useState(false);
   const [editingCat, setEditingCat] = useState(null);
   const catFileInputRef = useRef();
@@ -54,15 +55,25 @@ export default function AdminDashboard() {
   }, []);
 
   const loadCategories = async () => {
-    const cats = await getCategories();
-    setCategories(cats);
+    try {
+      const cats = await getCategories();
+      setCategories(cats);
+    } catch (err) {
+      console.error('Load categories error:', err);
+      setSuccessMsg('');
+    }
   };
 
   const loadProducts = async () => {
     setProdLoading(true);
-    const prods = await getProducts();
-    setProducts(prods);
-    setProdLoading(false);
+    try {
+      const prods = await getProducts();
+      setProducts(prods);
+    } catch (err) {
+      console.error('Load products error:', err);
+    } finally {
+      setProdLoading(false);
+    }
   };
 
   // ── Logout ──
@@ -78,6 +89,7 @@ export default function AdminDashboard() {
     setCatImagePreview('');
     setShowCatForm(false);
     setEditingCat(null);
+    setCatErrorMsg('');
   };
 
   const handleEditCategory = (cat) => {
@@ -93,10 +105,17 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!catForm.name.trim()) return;
     setCatLoading(true);
+    setCatErrorMsg('');
     try {
       let imageUrl = catImagePreview;
       if (catImageFile) {
-        imageUrl = await uploadToCloudinary(catImageFile, () => {});
+        try {
+          imageUrl = await uploadToCloudinary(catImageFile, () => {});
+        } catch (imgErr) {
+          // Image upload failed — save category without image
+          console.warn('Image upload failed, saving without image:', imgErr);
+          imageUrl = '';
+        }
       }
       const data = {
         name: catForm.name.trim(),
@@ -108,12 +127,14 @@ export default function AdminDashboard() {
         setSuccessMsg(`Category "${data.name}" updated!`);
       } else {
         await addCategory(data);
+        setSuccessMsg(`Category "${data.name}" added!`);
       }
       resetCatForm();
       await loadCategories();
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
       console.error('Category error:', err);
+      setCatErrorMsg('Error: ' + (err.message || 'Something went wrong. Try again.'));
     } finally {
       setCatLoading(false);
     }
@@ -405,6 +426,13 @@ export default function AdminDashboard() {
                       className="hidden"
                     />
                   </div>
+
+                  {/* Error Message */}
+                  {catErrorMsg && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
+                      <AlertCircle size={16} /> {catErrorMsg}
+                    </div>
+                  )}
 
                   {/* Buttons */}
                   <div className="flex gap-3 pt-2">
