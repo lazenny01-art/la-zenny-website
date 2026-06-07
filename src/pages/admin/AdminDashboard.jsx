@@ -16,7 +16,7 @@ const ALL_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"]
 const BADGES = ["", "New", "Bestseller", "Trending"];
 
 const emptyForm = {
-  name: "", price: "", description: "", category: "",
+  name: "", price: "", originalPrice: "", description: "", category: "",
   sizes: [], colors: "", badge: "", featured: false, youtubeUrl: "",
 };
 
@@ -177,6 +177,7 @@ export default function AdminDashboard() {
     setForm({
       name: prod.name || '',
       price: prod.price || '',
+      originalPrice: prod.originalPrice || '',
       description: prod.description || '',
       category: prod.category || '',
       sizes: prod.sizes || [],
@@ -217,6 +218,7 @@ export default function AdminDashboard() {
       const productData = {
         name: form.name.trim(),
         price: Number(form.price),
+        originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
         description: form.description.trim(),
         category: form.category,
         sizes: form.sizes,
@@ -567,7 +569,21 @@ export default function AdminDashboard() {
                         value={form.price}
                         onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
                         className="admin-input"
-                        placeholder="e.g. 999"
+                        placeholder="e.g. 599"
+                      />
+                    </div>
+
+                    {/* Original Price */}
+                    <div>
+                      <label className="admin-label">Original Price / MRP (₹) <span className="text-gray-500 font-normal">(Optional)</span></label>
+                      <input
+                        id="product-original-price"
+                        type="number"
+                        min="0"
+                        value={form.originalPrice}
+                        onChange={e => setForm(f => ({ ...f, originalPrice: e.target.value }))}
+                        className="admin-input"
+                        placeholder="e.g. 999 — leave empty if no discount"
                       />
                     </div>
 

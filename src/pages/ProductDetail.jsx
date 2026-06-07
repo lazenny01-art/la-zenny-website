@@ -142,10 +142,16 @@ export default function ProductDetail({ onAddToCart }) {
               </div>
             </div>
 
-            <div className="flex items-baseline gap-3">
+            <div className="flex items-baseline gap-3 flex-wrap">
               <span className="font-bold text-3xl text-[#111111]">₹{Number(product.price).toLocaleString('en-IN')}</span>
-              <span className="text-gray-400 text-sm line-through">₹{Math.round(product.price * 1.3).toLocaleString('en-IN')}</span>
-              <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded">23% OFF</span>
+              {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                <>
+                  <span className="text-gray-400 text-sm line-through">₹{Number(product.originalPrice).toLocaleString('en-IN')}</span>
+                  <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded">
+                    {Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}% OFF
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Color */}

@@ -74,7 +74,19 @@ export default function ProductCard({ product, onAddToCart }) {
           </h3>
         </Link>
         {/* Price */}
-        <p className="font-bold text-[#111111] text-base mb-3">₹{product.price.toLocaleString('en-IN')}</p>
+        <div className="mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-[#111111] text-base">₹{Number(product.price).toLocaleString('en-IN')}</span>
+            {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+              <>
+                <span className="text-gray-400 text-xs line-through">₹{Number(product.originalPrice).toLocaleString('en-IN')}</span>
+                <span className="bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                  {Math.round((product.originalPrice - product.price) / product.originalPrice * 100)}% OFF
+                </span>
+              </>
+            )}
+          </div>
+        </div>
 
         {/* Sizes */}
         <div className="flex flex-wrap gap-1.5 mb-3">
